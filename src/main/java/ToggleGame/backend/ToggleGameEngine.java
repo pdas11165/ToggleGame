@@ -3,6 +3,8 @@ import ToggleGame.frontend.ToggleGameInteraction;
 
 import java.util.*;
 
+// All the methods are done with the assistance of chat gpt
+
 /**
  * Buttons have the following order / placement on the screen
  *
@@ -16,10 +18,8 @@ import java.util.*;
  * Once it is completed please update this message
  */
 public class ToggleGameEngine implements ToggleGameInteraction {
-    private static final int BOARD_SIZE = 9;
-    private static final int[][] ADJACENT_INDEXES = {
-            {1, 3}, {0, 2, 4}, {1, 5}, {0, 4, 6}, {1, 3, 5, 7}, {2, 4, 8}, {3, 7}, {4, 6, 8}, {5, 7}
-    };
+    private static final int BOARD_SIZE = 9;    // initializing BOARD_SIZE to 9
+    private static final int[][] NEIGHBOR_INDICES = {{0,1}, {1,0}, {0,-1}, {-1,0}};
 
     /**
      * Initialize and return the game board for a ToggleGame (9x "1")
@@ -29,10 +29,7 @@ public class ToggleGameEngine implements ToggleGameInteraction {
 
     @Override
     public String initializeGame() {
-        //starter code ... replace the below code with a string containing all 1's
-        //int[] board = new int[BOARD_SIZE];
-        //  Arrays.fill(board, 1);
-        return ("111111111");
+        return ("111111111");    // Initialize the game board with all white squares
     }
 
     /**
@@ -44,22 +41,37 @@ public class ToggleGameEngine implements ToggleGameInteraction {
      * with "0" for black and "1" for white.
      * @throws IllegalArgumentException when button is outside 0-8
      */
-    @Override
-    public String buttonClicked(String current, int button) {
-        if (button < 0 || button > 8) {
-            throw new IllegalArgumentException("Button out of bounds.");
-        }
-        int[][] adjacentSquares = {{1, 3}, {0, 2, 4}, {1, 5}, {0, 4, 6}, {1, 3, 5, 7}, {2, 4, 8}, {3, 7}, {4, 6, 8}, {5, 7}};
-        StringBuilder sb = new StringBuilder(current);
-        sb.setCharAt(button, (char) (49 - sb.charAt(button)));  // Flip the color of the clicked button
-        for (int adjacent : adjacentSquares[button]) {
-            sb.setCharAt(adjacent, (char) (49 - sb.charAt(adjacent)));  // Flip the color of the adjacent buttons
-        }
-        return sb.toString();
-    }
-    //starter code...replace the below code
-    // return GameHelper.generateRandomBoard();
 
+    public String buttonClicked(String board, int button) {
+        char[] boardChars = board.toCharArray();    // Converting the game board to char array
+        flipButton(boardChars, button);            // Flip the clicked button
+        flipNeighbors(boardChars, button);        //  Flip the neighbouring buttons
+        return new String(boardChars);           //Return the updated game board
+    }
+    // Flip the color of the clicked button
+    private void flipButton(char[] board, int button) {
+        board[button] = board[button] == '0' ? '1' : '0'; // // If the color of the button is black, change it to white, and vice versa.
+
+    }
+    // Flip the color of the neighboring buttons
+    private void flipNeighbors(char[] board, int button) {
+        int row = button / 3;
+        int col = button % 3;
+        for (int[] neighborIndex : NEIGHBOR_INDICES) {
+            int neighborRow = row + neighborIndex[0];
+            int neighborCol = col + neighborIndex[1];
+            if (isValidIndex(neighborRow, neighborCol)) {      // Check if the neighbor button is a valid button
+                int neighborButton = neighborRow * 3 + neighborCol;
+                flipButton(board, neighborButton);    // Flip the color of the neighbor button
+            }
+        }
+    }
+
+    // Check if the given indices are a valid button
+    private boolean isValidIndex(int row, int col) {
+        return row >= 0 && row < 3 && col >= 0 && col < 3;  // Return true if the indices are within the button range, false otherwise
+
+    }
 
     /**
      * Return a sequence of moves that leads in the minimum number of moves
@@ -73,50 +85,38 @@ public class ToggleGameEngine implements ToggleGameInteraction {
      * Each move is the number associated with a button on the board. If no moves are
      * required to advance the currentBoard to the target an empty array is returned.
      */
+
     @Override
-    public int [] movesToSolve(String current, String target) {
+    public int[] movesToSolve(String current, String target) {
         if (current.equals(target)) {
-            return new int[0]; // empty array if already in target state
+            return new int[0];
         }
-
-        Map<String, String> parentMap = new HashMap<>();
+        Map<String, Integer> buttonToMove = new HashMap<>();
         Queue<String> queue = new LinkedList<>();
-        Set<String> visited = new HashSet<>();
-
-        parentMap.put(current, null);
         queue.offer(current);
-        visited.add(current);
-
+        buttonToMove.put(current, -1); // we don't want to count the initial board as a move
         while (!queue.isEmpty()) {
-            String state = queue.poll();
-            for (int button = 0; button < BOARD_SIZE; button++) {
-                String nextState = buttonClicked(state, button);
-                if (!visited.contains(nextState)) {
-                    parentMap.put(nextState, state);
-                    if (nextState.equals(target)) {
-                        // reconstruct path and return as array of button clicks
-                        List<Integer> path = new ArrayList<>();
-                        String currState = nextState;
-                        while (parentMap.get(currState) != null) {
-                            String finalCurrState = currState;
-                            String finalCurrState1 = currState;
-                            int buttonClick = Arrays.asList(ADJACENT_INDEXES).indexOf(Arrays.stream(ADJACENT_INDEXES)
-                                    .filter(a -> Arrays.asList(a).contains(getChangedButton(finalCurrState, parentMap.get(finalCurrState1))))
-                                    .findFirst()
-                                    .get());
-                            path.add(buttonClick);
-                            currState = parentMap.get(currState);
+            String curr = queue.poll();
+            for (int button = 0; button < 9; button++) {
+                String next = buttonClicked(curr, button);
+                if (!buttonToMove.containsKey(next)) {
+                    buttonToMove.put(next, button);
+                    if (next.equals(target)) {
+                        // we found the target, construct the move sequence and return
+                        List<Integer> moves = new ArrayList<>();
+                        while (button != -1) {
+                            moves.add(button);
+                            button = buttonToMove.get(curr);
+                            curr = button == -1 ? current : buttonClicked(curr, button);
                         }
-                        Collections.reverse(path);
-                        return path.stream().mapToInt(i -> i).toArray();
+                        Collections.reverse(moves);
+                        return moves.stream().mapToInt(Integer::intValue).toArray();
                     }
-                    visited.add(nextState);
-                    queue.offer(nextState);
+                    queue.offer(next);
                 }
             }
         }
-
-        return new int[0]; // empty array if no path exists
+        return new int[0]; // unreachable code since there's always a solution
     }
 
     // helper method to get the button that changed between two states
@@ -128,15 +128,6 @@ public class ToggleGameEngine implements ToggleGameInteraction {
         }
         return -1; // should not happen
     }
-
-        //starter code ... replace the below
-       // return new int[] {new Random().nextInt(9)};
-
-
-
-
-          ;
-
 
     /**
      * Return the minimum required number of required moves (button clicks)
@@ -151,8 +142,7 @@ public class ToggleGameEngine implements ToggleGameInteraction {
      */
     @Override
     public int minNumberOfMoves(String current, String target) {
-        //starter code ... replace the below
-       // return new Random().nextInt(9);
+
             if (current.equals(target)) {
                 return 0;
             }
