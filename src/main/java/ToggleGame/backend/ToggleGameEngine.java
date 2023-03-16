@@ -18,7 +18,9 @@ import java.util.*;
  * Once it is completed please update this message
  */
 public class ToggleGameEngine implements ToggleGameInteraction {
-    private static final int BOARD_SIZE = 9;    // initializing BOARD_SIZE to 9
+    private static final int BOARD_SIZE = 9;    // initializing BOARD_SIZE (the size of the game) to 9
+
+    // The indices of the neighboring buttons for each button on the game board.
     private static final int[][] NEIGHBOR_INDICES = {{0,1}, {1,0}, {0,-1}, {-1,0}};
 
     /**
@@ -55,13 +57,13 @@ public class ToggleGameEngine implements ToggleGameInteraction {
     }
     // Flip the color of the neighboring buttons
     private void flipNeighbors(char[] board, int button) {
-        int row = button / 3;
-        int col = button % 3;
-        for (int[] neighborIndex : NEIGHBOR_INDICES) {
-            int neighborRow = row + neighborIndex[0];
-            int neighborCol = col + neighborIndex[1];
-            if (isValidIndex(neighborRow, neighborCol)) {      // Check if the neighbor button is a valid button
-                int neighborButton = neighborRow * 3 + neighborCol;
+        int row = button / 3;       // Get the row index of the clicked button.
+        int col = button % 3;       // Get the column index of the clicked button.
+        for (int[] neighborIndex : NEIGHBOR_INDICES) {   // Loop through the neighboring button indices.
+            int neighborRow = row + neighborIndex[0];    // Calculate the row index of the neighboring button.
+            int neighborCol = col + neighborIndex[1];    // Calculate the column index of the neighboring button.
+            if (isValidIndex(neighborRow, neighborCol)) {  // Check if the neighboring button is a valid button.
+                int neighborButton = neighborRow * 3 + neighborCol;     // Calculate the index of the neighboring button.
                 flipButton(board, neighborButton);    // Flip the color of the neighbor button
             }
         }
