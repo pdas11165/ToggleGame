@@ -148,20 +148,27 @@ public class ToggleGameEngine implements ToggleGameInteraction {
             if (current.equals(target)) {
                 return 0;
             }
+        // Initialize a set to keep track of visited strings and a queue to store current strings
             Set<String> visited = new HashSet<>();
             Queue<String> queue = new LinkedList<>();
+        // Add the initial current string to the queue and mark it as visited
             queue.offer(current);
             visited.add(current);
+        // Add the initial current string to the queue and mark it as visited
             int moves = 0;
+        // Loop until the queue is empty
             while (!queue.isEmpty()) {
                 int size = queue.size();
+                // Loop over all possible button clicks (0-8)
                 for (int i = 0; i < size; i++) {
                     String curr = queue.poll();
                     if (curr.equals(target)) {
                         return moves;
                     }
                     for (int j = 0; j < 9; j++) {
+                        // Get the next string by clicking the j-th button
                         String next = buttonClicked(curr, j);
+                        // If the next string has not been visited before, add it to the queue and mark it as visited
                         if (!visited.contains(next)) {
                             visited.add(next);
                             queue.offer(next);
@@ -170,6 +177,7 @@ public class ToggleGameEngine implements ToggleGameInteraction {
                 }
                 moves++;
             }
+        // If the queue is empty and the target string has not been found, return -1
             return -1;
         }
     }
